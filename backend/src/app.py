@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from flask import jsonify
 from flask_cors import CORS
 from src.llm.organiser import organise_notes_with_gemini
 from src.firebase_client import add_notes, get_notes, delete_note
