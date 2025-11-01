@@ -1,12 +1,19 @@
 from src.llm.gemini_client import client
+from src.firebase_client import db
 import json
 
 def organise_notes_with_gemini(data):
     model="gemini-2.5-pro"
-
-    notes = data.get("notes", [])
-    if not notes:
-        return {"error": "No notes provided"}
+    try:
+        notes = data.get("notes", [])
+        if not notes:
+            return {"error": "No notes found in firebase"}, 404
+        
+        result = organise_notes_with_gemini(notes, model)
+        db.collection("organised_results").add(result)
+        return jsonify({"organised_notes": result}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
     formatted_notes = "\n".join(
         [f"- {n.get('author', 'User')} ({n.get('color', 'none')}): {n.get('text', '').strip()}"
@@ -33,12 +40,13 @@ def organise_notes_with_gemini(data):
         raw_text = response.text.strip()
     except Exception as e:
         return{"error": f"Gemini API call failed: {e}"}
-
+    
+    cleaned = raw_text.replace("```json", "").replace("```", "").strip()
     
     try:
-        output = json.loads(raw_text)
+        output = json.loads(cleaned)
     except json.JSONDecodeError:
-        output = {"raw_response": raw_text}
+        output = {"raw_response": cleaned}
     
 
     return output
