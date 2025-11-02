@@ -48,8 +48,9 @@ def create_app():
             return jsonify({"error": "color is required"}), 400
         
         db.collection("colors").document(color).set({"taken": False})
-        
+
         return jsonify({"message": f"Color {color} freed successfully"}), 200
+        
         
     @app.route("/notes", methods=["GET", "POST", "DELETE"])
     def notes():
@@ -60,11 +61,13 @@ def create_app():
             text = data.get("text", "")
             board = data.get("board", "default_board")
             guest_id = data.get("guest_id")
+            x = data.get("x", 0)
+            y = data.get("y", 0)
 
             if not guest_id:
                 return jsonify({"error": "guest_id is required"}), 400
 
-            note_id = add_notes(author, color, text, guest_id, board)
+            note_id = add_notes(author, color, text, guest_id, board, x, y)
             return jsonify({"message": "Note added", "note_id": note_id}), 201
         
         elif request.method == "GET":
@@ -84,6 +87,16 @@ def create_app():
             else:
                 return jsonify({"error": "Note not found"}), 404
 
+    @app.route("/notes/<note_id>/move", methods=["PATCH"])
+    def move_note(note_id):
+        data = request.get_json()
+        x = data.get("x")
+        y = data.get("y")
+        db.collection("notes").document(note_id).update({
+            "x": x,
+            "y": y
+        })
+        return jsonify({"message": "Note moved successfully"}), 200
 
     @app.route("/organise-firebase", methods=["GET"])
     def organise_firebase_notes():

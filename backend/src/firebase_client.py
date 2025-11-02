@@ -7,7 +7,7 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-def add_notes(author, color, text, guest_id, board="default_board"):
+def add_notes(author, color, text, guest_id, board="default_board", x=0, y=0):
     note_ref = db.collection("notes").document()
     note = {
         "author": author,
@@ -15,6 +15,8 @@ def add_notes(author, color, text, guest_id, board="default_board"):
         "text": text,
         "guest_id": guest_id,
         "board": board,
+        "x": x,
+        "y": y,
         "created_at": SERVER_TIMESTAMP,
         "updated_at": SERVER_TIMESTAMP
     }
