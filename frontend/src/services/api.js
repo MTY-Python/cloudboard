@@ -17,8 +17,15 @@ export const getNotes = async () => {
   return res.data.notes;
 };
 
-export const addNote = async (note, username, color, content) => {
-  const res = await api.post("/notes", { note, username, color, content });
+export const updateNote = async (note_id, text) => {
+  const res = await api.patch(`/notes/${note_id}`, { 
+    text: text 
+  });
+  
+  return res.data;
+};
+export const addNote = async (note) => {
+  const res = await api.post("/notes", note);
   return res.data;
 };
 

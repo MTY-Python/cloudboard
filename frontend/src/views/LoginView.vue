@@ -28,8 +28,8 @@ const handleLogin = () => {
       <div class="flex space-x-2 mb-6 justify-center">
         <button v-for="color in colors" :key="color.name" @click="inputColor = color.colorKey" :title="color.name"
           class="w-8 h-8 border-2 border-black rounded-full transition-all duration-150" :class="[
-            color.buttonClass, // ⭐ UPDATED to use 'buttonClass' property
-            { 'ring-4 ring-black ring-offset-2': inputColor === color.name }
+            color.buttonClass, //
+            { 'ring-4 ring-black ring-offset-2': inputColor === color.colorKey }
           ]"></button>
       </div>
 

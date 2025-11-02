@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from src.llm.organiser import organise_notes_with_gemini
-from src.firebase_client import add_notes, get_notes, delete_note, db
+from src.firebase_client import add_notes, get_notes, delete_note, edit_note, db
 from dotenv import load_dotenv
 from google import genai
 import uuid, random
@@ -109,6 +109,8 @@ def create_app():
             organised = result.get("categories", [])
             overview = result.get("overview", "No overview provided.")
 
+            xoffset=0
+
             for category in organised:
                 category_name = category.get("category", "Uncategorized")
                 category_notes = ", ".join(category.get("notes", []))
@@ -116,13 +118,19 @@ def create_app():
 
                 generated_note_text = f"Category: {category_name}\nNotes: {category_notes}\nSummary: {category_summary}"
 
+                newx = 100 +xoffset
+
                 add_notes(
                     author="Gemini AI",
                     color="ai-green",
                     text=generated_note_text,
                     guest_id="ai-system",
-                    board="default_board"
+                    board="default_board",
+                    x=newx,
+                    y=200,
                 )
+
+                xoffset+=30
 
             db.collection("organised_results").add({"categories": organised, "overview": overview})
 
@@ -209,7 +217,26 @@ def create_app():
         </html>
         """
 
-            
+    @app.route("/notes/<note_id>", methods=["PATCH"])
+    def update_note(note_id):
+        """
+        Updates the text content of a note.
+        Requires 'new_text' in the request body.
+        """
+        data = request.get_json()
+        new_text = data.get("text")
+
+        if new_text is None:
+            return jsonify({"error": "Missing 'text' in request body"}), 400
+        
+        # Call the helper function to update the note
+        success = edit_note(note_id, new_text)
+
+        if success:
+            return jsonify({"message": f"Note {note_id} updated successfully"}), 200
+        else:
+            return jsonify({"error": f"Note with ID {note_id} not found"}), 404
+
 
     return app
 

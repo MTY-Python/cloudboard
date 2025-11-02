@@ -4,7 +4,7 @@ from src.firebase_client import db
 import json
 
 def organise_notes_with_gemini(data):
-    model = "gemini-2.5-pro"
+    model = "gemini-2.5-flash"
     try:
         notes = data.get("notes", [])
         if not notes:
