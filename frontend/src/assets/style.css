@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+
+@theme static {
+  --color-primary: var(--color-slate-500);
+  --color-primary-hov: var(--color-slate-600);
+  --color-primary-light: var(--color-slate-300);
+
+  --color-body-primary: var(--color-gray-800);
+  --color-body-secondary: var(--color-gray-600);
+
+  --color-danger: var(--color-red-600);
+}
