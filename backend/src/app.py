@@ -1,10 +1,10 @@
 from flask import Flask, jsonify, request
-from flask import jsonify
 from flask_cors import CORS
 from src.llm.organiser import organise_notes_with_gemini
-from src.firebase_client import add_notes, get_notes, delete_note
+from src.firebase_client import add_notes, get_notes, delete_note, db
 from dotenv import load_dotenv
 from google import genai
+import uuid, random
 import os
 import json 
 
@@ -18,6 +18,14 @@ def create_app():
     def home():
         return jsonify({"message": "Welcome to the CloudBoard Backend!"})
     
+    @app.route("/register-guest", methods=["POST"])
+    def register_guest():
+        data = request.get_json()
+        username = data.get("username", "Guest")
+        guest_id = str(uuid.uuid4())
+        color = random.choice(["red", "blue", "green", "yellow", "purple", "orange"])
+        return jsonify({"message": "Guest registered", "guest_id": guest_id, "color": color}), 201
+        
     @app.route("/notes", methods=["GET", "POST", "DELETE"])
     def notes():
         if request.method == "POST":
@@ -26,7 +34,12 @@ def create_app():
             color = data.get("color", "white")
             text = data.get("text", "")
             board = data.get("board", "default_board")
-            note_id = add_notes(author, color, text, board)
+            guest_id = data.get("guest_id")
+
+            if not guest_id:
+                return jsonify({"error": "guest_id is required"}), 400
+
+            note_id = add_notes(author, color, text, guest_id, board)
             return jsonify({"message": "Note added", "note_id": note_id}), 201
         
         elif request.method == "GET":
@@ -45,9 +58,7 @@ def create_app():
                 return jsonify({"message": "Note deleted"}), 200
             else:
                 return jsonify({"error": "Note not found"}), 404
-            
 
-        
 
     @app.route("/organise-firebase", methods=["GET"])
     def organise_firebase_notes():
@@ -57,7 +68,27 @@ def create_app():
                 return jsonify({"error": "No notes found in Firebase"}), 404
             
             result = organise_notes_with_gemini({"notes": notes})
-            return jsonify({"organised_notes": result})
+            organised = result.get("categories", [])
+            overview = result.get("overview", "No overview provided.")
+
+            for category in organised:
+                category_name = category.get("category", "Uncategorized")
+                category_notes = ", ".join(category.get("notes", []))
+                category_summary = category.get("summary", "")
+
+                generated_note_text = f"Category: {category_name}\nNotes: {category_notes}\nSummary: {category_summary}"
+
+                add_notes(
+                    author="Gemini AI",
+                    color="ai-green",
+                    text=generated_note_text,
+                    guest_id="ai-system",
+                    board="default_board"
+                )
+
+            db.collection("organised_results").add({"categories": organised, "overview": overview})
+
+            return jsonify({"message": "Notes organised and added to Firebase", "organised_data": result}), 200
         
         except Exception as e:
             return jsonify({"error": str(e)}), 500
