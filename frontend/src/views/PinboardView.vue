@@ -14,10 +14,11 @@
       v-for="pin in pins"
       :key="pin.id"
       :id="pin.id"
-      :initial-x="pin.x"
-      :initial-y="pin.y"
-      :username="userData.username"
-      :color="userData.color"
+      :initial-x="pin.initialX"
+      :initial-y="pin.initialY"
+      :username="pin.username"
+      :color="pin.color"
+      :content="pin.content"
       @update:position="updatePinPosition(pin.id, $event)"
       @delete="deletePin"
     />
@@ -26,39 +27,43 @@
 
 <script setup>
 import Pin from '@/components/Pin.vue';
-import { reactive } from 'vue';
+import { db } from '../services/firebaseDB'; 
+import { collection, onSnapshot } from 'firebase/firestore';
+import { reactive, onMounted, onUnmounted } from 'vue';
 
-// Helper function for generating a unique ID (simple UUID-like string)
 const generateUniqueId = () => Math.random().toString(36).substring(2, 9);
 
-// Define Props to receive userData
 const props = defineProps({
   userData: {
     type: Object,
-    required: true, // ⭐ Removed the default property
-    // We can also add a validator to ensure structure, but 'required: true' is sufficient here
+    required: true,
   }
 });
 
-// --- Pin Management ---
 const pins = reactive([]);
 
-// Function to add a new pin at the clicked coordinates
 const addPin = (event) => {
   if (event.target === event.currentTarget) {
     
     const newX = event.clientX - 100;
     const newY = event.clientY - 50; 
 
+    const newPinData = {
+      initialX: newX > 0 ? newX : 10,
+      initialY: newY > 0 ? newY : 10,
+      content: '',
+      color: 'yellow',
+      username: 'Current User', // Placeholder for the logged-in user
+    };
+
     pins.push({
-      id: generateUniqueId(), // Assign a unique ID
+      id: generateUniqueId(),
       x: newX > 0 ? newX : 10,
       y: newY > 0 ? newY : 10,
     });
   }
 };
 
-// Function to update a pin's position after a drag
 const updatePinPosition = (id, newPosition) => {
   const index = pins.findIndex(p => p.id === id);
   if (index !== -1) {
@@ -67,11 +72,46 @@ const updatePinPosition = (id, newPosition) => {
   }
 };
 
-// Function to delete a pin
 const deletePin = (idToDelete) => {
   const index = pins.findIndex(p => p.id === idToDelete);
   if (index !== -1) {
-    pins.splice(index, 1); // Remove the pin from the reactive array
+    pins.splice(index, 1);
   }
 };
+
+
+let unsubscribe = null;
+
+onMounted(() => {
+  const pinsRef = collection(db, 'notes');
+  
+  unsubscribe = onSnapshot(pinsRef, (snapshot) => {
+    
+    const fetchedPins = snapshot.docs.map(doc => {
+        const data = doc.data();
+
+        const mappedPin = {
+            id: doc.id,
+            
+            username: data.author, 
+            
+            content: data.text || '', 
+            
+            initialX: data.initialX, 
+            
+            initialY: data.initialY, 
+            
+            color: data.color,
+        };
+        
+        return mappedPin;
+    });
+
+    pins.splice(0, pins.length, ...fetchedPins);
+  });
+});
+
+onUnmounted(() => {
+  if (unsubscribe) unsubscribe();
+});
 </script>

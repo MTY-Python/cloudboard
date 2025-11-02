@@ -5,7 +5,11 @@
       selectedColorClasses.pinBgClass,
       { 'z-50 shadow-2xl scale-[1.02]': isDragging }
     ]"
-    :style="{ top: `${y}px`, left: `${x}px` }"
+    :style="{ 
+      top: `${props.initialY + offset.y}px`, 
+      left: `${props.initialX + offset.x}px`,
+      transform: isDragging ? 'translateZ(0)' : 'none'
+    }"
   >
     <button 
       @click.stop="handleDelete" 
@@ -42,21 +46,19 @@ import { colors } from '@/services/colors.js';
 
 const props = defineProps({
   id: { type: String, required: true },
-  initialX: { type: Number, default: 50 },
-  initialY: { type: Number, default: 50 },
+  initialX: { type: Number, default: 100 },
+  initialY: { type: Number, default: 100 },
   username: { type: String, required: true },
   color: { type: String, default: 'yellow' },
-  // NEW: Prop for the pin's text content
   content: { type: String, default: '' }, 
 });
 
 const emit = defineEmits(['update:position', 'delete', 'update:content']);
 
-const x = ref(props.initialX);
-const y = ref(props.initialY);
 const isDragging = ref(false);
 
-// NEW: Emits the updated content back to the parent
+const offset = ref({ x: 0, y: 0 }); 
+
 const updateContent = (newContent) => {
     emit('update:content', newContent);
 };
@@ -65,9 +67,7 @@ const handleDelete = () => {
     emit('delete', props.id);
 };
 
-// ⭐ STEP 2: Computed property to map the color prop string to the actual classes
 const selectedColorClasses = computed(() => {
-    // Find the color object that matches the 'color' prop (e.g., 'blue')
     const defaultColor = { 
         pinBgClass: 'bg-yellow-300 text-gray-900', 
         headerBgClass: 'bg-yellow-400 border-yellow-500' 
@@ -76,11 +76,8 @@ const selectedColorClasses = computed(() => {
     return colors.find(c => c.colorKey === props.color) || defaultColor;
 });
 
-// --- Drag Logic (using local refs x and y) ---
 let initialMouseX = 0;
 let initialMouseY = 0;
-let initialPinX = 0;
-let initialPinY = 0;
 
 const startDrag = (e) => {
   if (e.type === 'touchstart') {
@@ -93,9 +90,8 @@ const startDrag = (e) => {
 
   initialMouseX = clientX;
   initialMouseY = clientY;
-  initialPinX = x.value;
-  initialPinY = y.value;
 
+  
   document.addEventListener('mousemove', onDrag);
   document.addEventListener('mouseup', stopDrag);
   document.addEventListener('touchmove', onDrag);
@@ -111,8 +107,7 @@ const onDrag = (e) => {
   const dx = clientX - initialMouseX;
   const dy = clientY - initialMouseY;
   
-  x.value = initialPinX + dx;
-  y.value = initialPinY + dy;
+  offset.value = { x: dx, y: dy };
 };
 
 const stopDrag = () => {
@@ -123,7 +118,11 @@ const stopDrag = () => {
   document.removeEventListener('touchmove', onDrag);
   document.removeEventListener('touchend', stopDrag);
   
-  // Emit final position to update parent state
-  emit('update:position', { x: x.value, y: y.value });
+  const newX = props.initialX + offset.value.x;
+  const newY = props.initialY + offset.value.y;
+
+  emit('update:position', { x: newX, y: newY });
+  
+  offset.value = { x: 0, y: 0 }; 
 };
 </script>
