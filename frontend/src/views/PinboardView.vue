@@ -5,7 +5,7 @@
   >
     <div class="absolute top-4 left-4 bg-white p-3 rounded-lg shadow-md z-50">
       <div class="text-lg font-semibold">
-        Pinboard for <span :class="`text-${userData.color}-600`">{{ userData.username }}</span>
+        Pinboard for <span :class="`text-${userData.color}-600`">{{ userData.name }}</span>
       </div>
       <div class="text-sm text-gray-500">Click anywhere to create a new pin!</div>
     </div>
@@ -31,10 +31,13 @@ import { reactive } from 'vue';
 // Helper function for generating a unique ID (simple UUID-like string)
 const generateUniqueId = () => Math.random().toString(36).substring(2, 9);
 
-// --- Static User Data ---
-const userData = reactive({
-  username: 'Alex_N',
-  color: 'blue' // Available colors: yellow, blue, green, red, purple
+// Define Props to receive userData
+const props = defineProps({
+  userData: {
+    type: Object,
+    required: true, // ⭐ Removed the default property
+    // We can also add a validator to ensure structure, but 'required: true' is sufficient here
+  }
 });
 
 // --- Pin Management ---
