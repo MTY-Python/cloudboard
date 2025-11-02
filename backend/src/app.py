@@ -22,9 +22,34 @@ def create_app():
     def register_guest():
         data = request.get_json()
         username = data.get("username", "Guest")
+        color = data.get("color")
+
+        if not username or not color:
+            return jsonify({"error": "username and color are required"}), 400
+        
+        color_ref = db.collection("colors").document(color)
+        color_doc = color_ref.get()
+
+        if color_doc.exists and color_doc.to_dict().get("taken"):
+            return jsonify({"error": "Color already taken"}), 409
+        
+        color_ref.set({"taken": True, "username": username})
+
         guest_id = str(uuid.uuid4())
-        color = random.choice(["red", "blue", "green", "yellow", "purple", "orange"])
-        return jsonify({"message": "Guest registered", "guest_id": guest_id, "color": color}), 201
+
+        return jsonify({"message": f"Guest {username} registered successfully", "guest_id": guest_id, "color": color}), 201
+    
+    @app.route("/free-color", methods=["POST"])
+    def free_color():
+        data = request.get_json()
+        color = data.get("color")
+
+        if not color:
+            return jsonify({"error": "color is required"}), 400
+        
+        db.collection("colors").document(color).set({"taken": False})
+        
+        return jsonify({"message": f"Color {color} freed successfully"}), 200
         
     @app.route("/notes", methods=["GET", "POST", "DELETE"])
     def notes():
