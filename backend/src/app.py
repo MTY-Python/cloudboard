@@ -130,7 +130,7 @@ def create_app():
                     y=200,
                 )
 
-                xoffset+=30
+                xoffset+=100
 
             db.collection("organised_results").add({"categories": organised, "overview": overview})
 
