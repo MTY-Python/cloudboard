@@ -1,67 +1,36 @@
-import axios from 'axios'
+import axios from "axios";
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-})
+  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:5000",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
-export const fetchLinks = async () => {
-    const res = await api.get('/links')
+export const registerGuest = async (username, color) => {
+  const res = await api.post("/register-guest", { username, color });
+  return res.data; 
+};
 
-    return res.data
-}
+export const getNotes = async () => {
+  const res = await api.get("/notes");
+  return res.data.notes;
+};
 
-export const createLink = async (url) => {
-    const res = await api.post('/links', { url })
+export const addNote = async (note) => {
+  const res = await api.post("/notes", note);
+  return res.data;
+};
 
-    if (res.data.success)
-        return {
-            success: true,
-            errorMessage: null,
+export const deleteNote = async (note_id) => {
+  const res = await api.delete("/notes", { data: { note_id } });
+  return res.data;
+};
 
-            id: res.data.link.id,
-            url: res.data.link.url,
-            shortUrl: res.data.link.shortUrl,
-            created: res.data.link.created,
-            expiration: res.data.link.expiration,
-        }
+export const organiseNotes = async () => {
+  const res = await api.get("/organise-firebase");
+  return res.data;
+};
 
-    return {
-        success: false,
-        errorMessage: res.data.error,
 
-        id: null,
-        url: url,
-        shortUrl: null,
-        created: null,
-        expiration: null,
-    }
-}
-
-export const deleteLink = async (id) => {
-    const res = await api.delete(`/links/${id}`)
-
-    console.log(res)
-    if (res.data.success)
-        return { success: true }
-    else
-        return { success: false, errorMessage: res.data.error }
-}
-
-export const getLongUrl = async (shortCode) => {
-    const res = await api.get(`/sc/${shortCode}`)
-
-    if (res.data.success)
-        return { success: true, longUrl: res.data.url }
-    else
-        return { success: false, errorMessage: res.data.error }
-}
-
-export default {
-    fetchLinks,
-    createLink,
-    deleteLink,
-    getLongUrl,
-}
+export default api;
