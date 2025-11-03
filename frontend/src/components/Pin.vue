@@ -27,8 +27,8 @@
 
       <button @click.stop="handleUpdate" :disabled="localContent === content"
         class="p-1 text-sm font-semibold rounded transition duration-150 ease-in-out z-10" :class="{
-          'bg-gray-500 text-white cursor-not-allowed opacity-70': localContent === content,
-          'bg-blue-600 hover:bg-blue-700 text-white shadow-md': localContent !== content
+          'invisible': localContent === content,
+          'bg-primary hover:bg-primary-hover opacity-70 hover:opacity-100 text-white shadow-md': localContent !== content
         }">
         <CheckIcon class="size-5" />
       </button>
